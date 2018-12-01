@@ -37,4 +37,10 @@ var routes = Routes{
 		Pattern: "/api/login",
 		HandlerFunc: controller.Login,
 	},
+	Route{
+		Name:    "Register",
+		Method:  []string{"Post"},
+		Pattern: "/api/register",
+		HandlerFunc: controller.Register,
+	},
 }

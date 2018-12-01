@@ -27,6 +27,11 @@ func GetUserByUsername(value string, user *User) bool{
 	return flag
 }
 
+func GetUserByEmail(value string, user *User) bool {
+	flag := Find("user",bson.M{"email" : value}, user)
+	return flag
+}
+
 // 增加用户
 func InsertUser(user *User) bool{
 	flag:= Insert("user", user)
