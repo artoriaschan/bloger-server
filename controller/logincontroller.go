@@ -2,47 +2,50 @@ package controller
 
 import (
 	"fmt"
-	"github.com/artoriaschan/bloger-server/model"
-	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
 	"net/url"
 	"regexp"
 	"time"
+
+	"github.com/artoriaschan/bloger-server/model"
+	"gopkg.in/mgo.v2/bson"
 )
-func userLoginHandle(username, password string) ([]byte){
+
+func userLoginHandle(username, password string) ([]byte, *model.User) {
 	var result []byte
 	user := model.User{}
 	//hasUser := model.GetUserByUsername(username, &user)
 	hasUser := model.GetUserByEmail(username, &user)
-	if(!hasUser) {
+	if !hasUser {
 		responseResult := ResponseResult{
-			Code: NoRegister,
+			Code:    NoRegister,
 			Message: "该邮箱没有注册",
-			Data: nil,
+			Data:    nil,
 		}
 		result = responseResult.ToJson()
-		return result
+		return result, nil
 	}
 	flag := user.CheckPassword(password)
-	if(flag) {
+	if flag {
 		responseResult := ResponseResult{
-			Code: OK,
+			Code:    OK,
 			Message: "查询成功",
-			Data: user,
+			Data:    user,
 		}
 		result = responseResult.ToJson()
-	}else{
+	} else {
 		responseResult := ResponseResult{
-			Code: WrongPassword,
+			Code:    WrongPassword,
 			Message: "邮箱/密码输入错误",
-			Data: nil,
+			Data:    nil,
 		}
 		result = responseResult.ToJson()
 	}
-	return result
+	return result, &user
 }
-func Login(writer http.ResponseWriter, request *http.Request){
+func Login(writer http.ResponseWriter, request *http.Request) {
+
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	writer.WriteHeader(http.StatusOK)
 	var email string
@@ -67,11 +70,25 @@ func Login(writer http.ResponseWriter, request *http.Request){
 		email = request.Form.Get("email")
 		password = request.Form.Get("password")
 	}
+	Logger.Info(email)
+	result, user := userLoginHandle(email, password)
+	// 写入cookie
+	cookieValue := "username=" + user.Username + "&email=" + user.Email
+	// COOKIE_MAX_MAX_AGE := 30 * time.Hour * 24 / time.Second // 单位：秒。
+	// maxAge := int(COOKIE_MAX_MAX_AGE)
+	cookie := http.Cookie{
+		Name:   "onebitcode",
+		Value:  cookieValue,
+		Path:   "/",
+		MaxAge: -1,
+		Domain: "localhost", //域名
+	}
+	http.SetCookie(writer, &cookie)
 
-	writer.Write(userLoginHandle(email, password))
+	writer.Write(result)
 }
 
-func userRegisterHandle(email, username, mobile, password string, user *model.User) []byte{
+func userRegisterHandle(email, username, mobile, password string, user *model.User) []byte {
 	var responseResult ResponseResult
 	var result []byte
 
@@ -79,31 +96,31 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	if email != "" {
 		emailExp := regexp.MustCompile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`)
 		emailExpResult := emailExp.FindAllStringSubmatch(email, -1)
-		if(emailExpResult == nil) {
+		if emailExpResult == nil {
 			responseResult = ResponseResult{
-				Code: WrongFormatEmail,
+				Code:    WrongFormatEmail,
 				Message: "邮箱格式不正确",
-				Data: nil,
+				Data:    nil,
 			}
 			result = responseResult.ToJson()
 			return result
 		}
 
 		flag := model.GetUserByEmail(email, &model.User{})
-		if(flag){
+		if flag {
 			responseResult = ResponseResult{
-				Code: ExsitedEmail,
+				Code:    ExsitedEmail,
 				Message: "该邮箱已注册",
-				Data: nil,
+				Data:    nil,
 			}
 			result = responseResult.ToJson()
 			return result
 		}
-	}else{
+	} else {
 		responseResult = ResponseResult{
-			Code: EmptyEmail,
+			Code:    EmptyEmail,
 			Message: "邮箱不能为空",
-			Data: nil,
+			Data:    nil,
 		}
 		result = responseResult.ToJson()
 		return result
@@ -113,19 +130,19 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	if username != "" {
 		if len(username) > 12 || len(username) < 5 {
 			responseResult = ResponseResult{
-				Code: WrongFormatUsername,
+				Code:    WrongFormatUsername,
 				Message: "用户名填写错误",
-				Data: nil,
+				Data:    nil,
 			}
 			result = responseResult.ToJson()
 			return result
 		}
-	}else{
+	} else {
 		if len(username) > 12 || len(username) < 5 {
 			responseResult = ResponseResult{
-				Code: EmptyUsername,
+				Code:    EmptyUsername,
 				Message: "用户名不能为空",
-				Data: nil,
+				Data:    nil,
 			}
 			result = responseResult.ToJson()
 			return result
@@ -135,18 +152,18 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	if password != "" {
 		if len(password) < 6 || len(password) > 18 {
 			responseResult = ResponseResult{
-				Code: WrongFormatPassword,
+				Code:    WrongFormatPassword,
 				Message: "密码填写错误",
-				Data: nil,
+				Data:    nil,
 			}
 			result = responseResult.ToJson()
 			return result
 		}
-	}else{
+	} else {
 		responseResult = ResponseResult{
-			Code: EmpeyPassword,
+			Code:    EmpeyPassword,
 			Message: "密码不能为空",
-			Data: nil,
+			Data:    nil,
 		}
 		result = responseResult.ToJson()
 		return result
@@ -155,39 +172,39 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	if mobile != "" {
 		mobileExp := regexp.MustCompile(`^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\d{8}$`)
 		mobileExpResult := mobileExp.FindAllStringSubmatch(email, -1)
-		if(mobileExpResult == nil) {
+		if mobileExpResult == nil {
 			responseResult = ResponseResult{
-				Code: WrongFormatMobile,
+				Code:    WrongFormatMobile,
 				Message: "手机格式不正确",
-				Data: nil,
+				Data:    nil,
 			}
 			result = responseResult.ToJson()
 			return result
 		}
 	}
 	user = &model.User{
-		Id: bson.NewObjectId(),
-		Username: username,
-		Email: email,
-		Mobile: mobile,
-		Registertime:  time.Now().UnixNano(),
+		Id:           bson.NewObjectId(),
+		Username:     username,
+		Email:        email,
+		Mobile:       mobile,
+		Registertime: time.Now().UnixNano(),
 	}
 	user.SetPassword(password)
 
 	flag := model.InsertUser(user)
 
-	if(flag) {
+	if flag {
 		responseResult = ResponseResult{
-			Code: OK,
+			Code:    OK,
 			Message: "注册成功",
-			Data: user,
+			Data:    user,
 		}
 		result = responseResult.ToJson()
-	}else{
+	} else {
 		responseResult = ResponseResult{
-			Code: NoRegister,
+			Code:    NoRegister,
 			Message: "注册失败",
-			Data: nil,
+			Data:    nil,
 		}
 		result = responseResult.ToJson()
 	}
