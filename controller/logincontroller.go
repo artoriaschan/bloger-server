@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/artoriaschan/bloger-server/utils/logging"
 	"log"
 	"net/http"
 	"net/url"
@@ -70,7 +72,6 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 		email = request.Form.Get("email")
 		password = request.Form.Get("password")
 	}
-	Logger.Info(email)
 	result, user := userLoginHandle(email, password)
 	// 写入cookie
 	cookieValue := "username=" + user.Username + "&email=" + user.Email
@@ -84,7 +85,17 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 		Domain: "localhost", //域名
 	}
 	http.SetCookie(writer, &cookie)
-
+	header, _ := json.Marshal(request.Header)
+	userJson, _ := json.Marshal(user)
+	access := logging.AccessLoggerFormat{
+		IP: request.RemoteAddr,
+		Header: string(header),
+		UserAgent: request.UserAgent(),
+		Extend: string(userJson),
+	}
+	accessJson,_ := json.Marshal(access)
+	ConsoleLogger.Println(string(accessJson))
+	AccessLogger.Println(string(accessJson))
 	writer.Write(result)
 }
 

@@ -2,13 +2,12 @@ package main
 
 import (
 	"github.com/artoriaschan/bloger-server/service"
-	"github.com/artoriaschan/bloger-server/utils"
+	"github.com/artoriaschan/bloger-server/utils/logging"
 )
 
 var appName = "bloger-server"
-var Logger = utils.Logger
-
+var InfoLogger = logging.GetLogger(logging.InfoPath,"Info")
 func main() {
-	Logger.Info("Starting " + appName)
+	InfoLogger.Println("Starting " + appName)
 	service.StartWebServer("8088")
 }

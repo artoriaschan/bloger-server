@@ -10,7 +10,7 @@ type User struct {
 	Email string `bson:"email",json:"email"`
 	Password string `bson:"password",json:"password"`
 	Mobile string `bson:"mobile",json:"mobile"`
-	Registertime int64 `bson:"registertime",json:"registertime"`	// 时间戳
+	Registertime int64 `bson:"register_time",json:"registerTime"`	// 时间戳
 }
 
 func (u *User) SetPassword (password string) {

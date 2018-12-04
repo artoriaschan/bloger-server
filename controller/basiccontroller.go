@@ -2,19 +2,17 @@ package controller
 
 import (
 	"encoding/json"
+	"github.com/artoriaschan/bloger-server/utils/logging"
 	"log"
-
-	"github.com/artoriaschan/bloger-server/utils"
 )
-
-var Logger = utils.Logger
 
 type ResponseResult struct {
 	Code    State       `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 }
-
+var AccessLogger = logging.GetLogger(logging.AccessPath,"Info")
+var ConsoleLogger = logging.GetConsoleLogger()
 func (rr *ResponseResult) ToJson() []byte {
 	resultJson, err := json.Marshal(rr)
 
