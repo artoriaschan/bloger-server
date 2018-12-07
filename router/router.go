@@ -1,14 +1,16 @@
 package router
 
 import (
+	"github.com/rs/cors"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-func NewRouter() *mux.Router {
+func NewHandler() http.Handler {
 
 	router := mux.NewRouter().StrictSlash(true)
+	// 设置静态目录
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	for _, route := range routes {
 		router.Methods(route.Method...).
@@ -16,5 +18,17 @@ func NewRouter() *mux.Router {
 			Name(route.Name).
 			Handler(route.HandlerFunc)
 	}
-	return router
+	// 添加cors设置
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		Debug:            false,
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+	})
+	handler := c.Handler(router)
+	return handler
 }

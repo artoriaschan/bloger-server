@@ -1,12 +1,13 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/artoriaschan/bloger-server/utils/logging"
+	"github.com/go-session/session"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"time"
 
@@ -14,8 +15,9 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-func userLoginHandle(username, password string) ([]byte, *model.User) {
+func userLoginHandle(username, password string) ([]byte, *model.User, bool) {
 	var result []byte
+	var isSuccess bool
 	user := model.User{}
 	//hasUser := model.GetUserByUsername(username, &user)
 	hasUser := model.GetUserByEmail(username, &user)
@@ -26,7 +28,8 @@ func userLoginHandle(username, password string) ([]byte, *model.User) {
 			Data:    nil,
 		}
 		result = responseResult.ToJson()
-		return result, nil
+		isSuccess = false
+		return result, nil, isSuccess
 	}
 	flag := user.CheckPassword(password)
 	if flag {
@@ -36,29 +39,25 @@ func userLoginHandle(username, password string) ([]byte, *model.User) {
 			Data:    user,
 		}
 		result = responseResult.ToJson()
+		isSuccess = true
 	} else {
 		responseResult := ResponseResult{
-			Code:    WrongPassword,
+			Code:    WrongParams,
 			Message: "邮箱/密码输入错误",
 			Data:    nil,
 		}
 		result = responseResult.ToJson()
+		isSuccess = false
 	}
-	return result, &user
+	return result, &user, isSuccess
 }
+//登录
 func Login(writer http.ResponseWriter, request *http.Request) {
-
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	writer.WriteHeader(http.StatusOK)
+	//writer.WriteHeader(http.StatusOK)
+	fmt.Println(request.Cookies())
 	var email string
 	var password string
-	if request.Method == http.MethodGet {
-		query := request.URL.RawQuery
-		queryMap, _ := url.ParseQuery(query)
-		fmt.Println(queryMap)
-		email = queryMap["email"][0]
-		password = queryMap["password"][0]
-	}
 	if request.Method == http.MethodPost {
 		err := request.ParseForm()
 		if err != nil {
@@ -72,19 +71,28 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 		email = request.Form.Get("email")
 		password = request.Form.Get("password")
 	}
-	result, user := userLoginHandle(email, password)
-	// 写入cookie
-	cookieValue := "username=" + user.Username + "&email=" + user.Email
-	// COOKIE_MAX_MAX_AGE := 30 * time.Hour * 24 / time.Second // 单位：秒。
-	// maxAge := int(COOKIE_MAX_MAX_AGE)
-	cookie := http.Cookie{
-		Name:   "onebitcode",
-		Value:  cookieValue,
-		Path:   "/",
-		MaxAge: -1,
-		Domain: "localhost", //域名
+	result, user, isSuccess := userLoginHandle(email, password)
+	if isSuccess {
+		store, err := session.Start(context.Background(), writer, request)
+		if err != nil {
+			panic(err)
+		}
+		store.Set("loginUser", user)
+		// 写入cookie
+		COOKIE_MAX_MAX_AGE := time.Hour * 24 / time.Second   // 单位：秒。
+		maxAge := int(COOKIE_MAX_MAX_AGE)
+		cookie := http.Cookie{
+			Name:   "uid",
+			Value:  user.Id.Hex(),
+			Path: "/",
+			HttpOnly:true,
+			MaxAge: maxAge,
+		}
+		http.SetCookie(writer, &cookie)
 	}
-	http.SetCookie(writer, &cookie)
+	writer.Write(result)
+
+	// 日志处理
 	header, _ := json.Marshal(request.Header)
 	userJson, _ := json.Marshal(user)
 	access := logging.AccessLoggerFormat{
@@ -96,7 +104,59 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 	accessJson,_ := json.Marshal(access)
 	ConsoleLogger.Println(string(accessJson))
 	AccessLogger.Println(string(accessJson))
+}
+// 后台登录
+func AdminLogin(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	fmt.Println(request.Cookies())
+	var email string
+	var password string
+	if request.Method == http.MethodPost {
+		err := request.ParseForm()
+		if err != nil {
+			panic(err)
+		}
+		defer func() {
+			if err := recover(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+		email = request.Form.Get("email")
+		password = request.Form.Get("password")
+	}
+	result, user, isSuccess := userLoginHandle(email, password)
+	if isSuccess {
+		store, err := session.Start(context.Background(), writer, request)
+		if err != nil {
+			panic(err)
+		}
+		store.Set("loginUser", user)
+		// 写入cookie
+		COOKIE_MAX_MAX_AGE := time.Hour * 24 / time.Second   // 单位：秒。
+		maxAge := int(COOKIE_MAX_MAX_AGE)
+		cookie := http.Cookie{
+			Name:   "uid",
+			Value:  user.Id.Hex(),
+			Path: "/",
+			HttpOnly:true,
+			MaxAge: maxAge,
+		}
+		http.SetCookie(writer, &cookie)
+	}
 	writer.Write(result)
+
+	// 日志处理
+	header, _ := json.Marshal(request.Header)
+	userJson, _ := json.Marshal(user)
+	access := logging.AccessLoggerFormat{
+		IP: request.RemoteAddr,
+		Header: string(header),
+		UserAgent: request.UserAgent(),
+		Extend: string(userJson),
+	}
+	accessJson,_ := json.Marshal(access)
+	ConsoleLogger.Println(string(accessJson))
+	AccessLogger.Println(string(accessJson))
 }
 
 func userRegisterHandle(email, username, mobile, password string, user *model.User) []byte {
@@ -109,7 +169,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		emailExpResult := emailExp.FindAllStringSubmatch(email, -1)
 		if emailExpResult == nil {
 			responseResult = ResponseResult{
-				Code:    WrongFormatEmail,
+				Code:    WrongParams,
 				Message: "邮箱格式不正确",
 				Data:    nil,
 			}
@@ -120,7 +180,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		flag := model.GetUserByEmail(email, &model.User{})
 		if flag {
 			responseResult = ResponseResult{
-				Code:    ExsitedEmail,
+				Code:    WrongParams,
 				Message: "该邮箱已注册",
 				Data:    nil,
 			}
@@ -129,7 +189,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		}
 	} else {
 		responseResult = ResponseResult{
-			Code:    EmptyEmail,
+			Code:    WrongParams,
 			Message: "邮箱不能为空",
 			Data:    nil,
 		}
@@ -141,7 +201,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	if username != "" {
 		if len(username) > 12 || len(username) < 5 {
 			responseResult = ResponseResult{
-				Code:    WrongFormatUsername,
+				Code:    WrongParams,
 				Message: "用户名填写错误",
 				Data:    nil,
 			}
@@ -151,7 +211,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	} else {
 		if len(username) > 12 || len(username) < 5 {
 			responseResult = ResponseResult{
-				Code:    EmptyUsername,
+				Code:    WrongParams,
 				Message: "用户名不能为空",
 				Data:    nil,
 			}
@@ -163,7 +223,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	if password != "" {
 		if len(password) < 6 || len(password) > 18 {
 			responseResult = ResponseResult{
-				Code:    WrongFormatPassword,
+				Code:    WrongParams,
 				Message: "密码填写错误",
 				Data:    nil,
 			}
@@ -172,7 +232,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		}
 	} else {
 		responseResult = ResponseResult{
-			Code:    EmpeyPassword,
+			Code:    WrongParams,
 			Message: "密码不能为空",
 			Data:    nil,
 		}
@@ -185,7 +245,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		mobileExpResult := mobileExp.FindAllStringSubmatch(email, -1)
 		if mobileExpResult == nil {
 			responseResult = ResponseResult{
-				Code:    WrongFormatMobile,
+				Code:    WrongParams,
 				Message: "手机格式不正确",
 				Data:    nil,
 			}
@@ -221,10 +281,9 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 	}
 	return result
 }
-
+// 注册
 func Register(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-	writer.WriteHeader(http.StatusOK)
 	var result []byte
 	var email string
 	var username string

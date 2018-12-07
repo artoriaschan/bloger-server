@@ -13,6 +13,7 @@ type ResponseResult struct {
 }
 var AccessLogger = logging.GetLogger(logging.AccessPath,"Info")
 var ConsoleLogger = logging.GetConsoleLogger()
+
 func (rr *ResponseResult) ToJson() []byte {
 	resultJson, err := json.Marshal(rr)
 
@@ -27,3 +28,15 @@ func (rr *ResponseResult) ToJson() []byte {
 
 	return resultJson
 }
+
+// func(writer http.ResponseWriter, request *http.Request) {
+// 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+// 	writer.WriteHeader(http.StatusOK)
+// 	writer.Write([]byte("{'path':'/','result':'ok'}"))
+// 	//// Case 1: w.Write byte
+// 	//w.Write([]byte("Hello World"))
+// 	//// Case 2: fmt.Fprintf
+// 	//fmt.Fprintf(w, "Hello World")
+// 	//// Case 3: io.Write
+// 	//io.WriteString(w, "Hello World")
+// },
