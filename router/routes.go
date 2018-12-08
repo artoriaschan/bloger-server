@@ -29,9 +29,21 @@ var routes = Routes{
 		HandlerFunc: controller.Login,
 	},
 	Route{
+		Name:        "AdminLogin",
+		Method:      []string{"Post"},
+		Pattern:     "/api/admin/login",
+		HandlerFunc: controller.AdminLogin,
+	},
+	Route{
 		Name:        "Register",
 		Method:      []string{"Post"},
 		Pattern:     "/api/register",
 		HandlerFunc: controller.Register,
+	},
+	Route{
+		Name:		 "CurrentAdmin",
+		Method:      []string{"Get"},
+		Pattern:     "/api/currentAdmin",
+		HandlerFunc: controller.CurrentAdmin,
 	},
 }

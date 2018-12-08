@@ -1,11 +1,12 @@
-package utils
+package jwtoken
+
 import (
-	// "fmt"
-	"encoding/json"
-	"encoding/base64"
-	"crypto/sha256"
 	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"gopkg.in/mgo.v2/bson" // "fmt"
 	"strings"
 )
 
@@ -20,20 +21,19 @@ type Header struct {
 
 // PayLoad 负载
 type PayLoad struct {
-	Sub string `json:"sub"`
-	Name string `json:"name"`
-	Admin bool `json:"admin"`
+	Sub   string        `json:"sub"`
+	Aud   bson.ObjectId `json:"aud"`
+	Name  string        `json:"name"`
+	Admin bool          `json:"admin"`
 	// Expire int `json:"exp"`
 }
 
 // JWT 完整的本体
 type JWT struct {
-	Header	`json:"header"`
-	PayLoad	`json:"payload"`
+	Header    `json:"header"`
+	PayLoad   `json:"payload"`
 	Signature string `json:"signature"`
 }
-
-func main(){}
 
 // Encode 将 json 转成符合 JWT 标准的字符串
 func (jwt *JWT) Encode() string {
@@ -57,11 +57,10 @@ func getHmacCode(s string) string {
 	return hex.EncodeToString(key)
 }
 
-
 // Decode 验证 jwt 签名是否正确,并将json内容解析出来
-func (jwt *JWT) Decode( code string) bool {
+func (jwt *JWT) Decode(code string) bool {
 
-	arr := strings.Split(code,".")
+	arr := strings.Split(code, ".")
 	if len(arr) != 3 {
 		return false
 	}
@@ -73,15 +72,13 @@ func (jwt *JWT) Decode( code string) bool {
 		return false
 	}
 
-
 	header, err := base64.StdEncoding.DecodeString(arr[0])
 	checkError(err)
 	payload, err := base64.StdEncoding.DecodeString(arr[1])
 	checkError(err)
 
-
 	json.Unmarshal(header, &jwt.Header)
-	json.Unmarshal(payload,&jwt.PayLoad)
+	json.Unmarshal(payload, &jwt.PayLoad)
 
 	return true
 }

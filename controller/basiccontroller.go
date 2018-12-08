@@ -2,8 +2,9 @@ package controller
 
 import (
 	"encoding/json"
+
+	"github.com/artoriaschan/bloger-server/utils/jwt"
 	"github.com/artoriaschan/bloger-server/utils/logging"
-	"log"
 )
 
 type ResponseResult struct {
@@ -11,8 +12,13 @@ type ResponseResult struct {
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 }
-var AccessLogger = logging.GetLogger(logging.AccessPath,"Info")
+
+var AccessLogger = logging.GetLogger(logging.AccessPath, "Info")
 var ConsoleLogger = logging.GetConsoleLogger()
+
+// jwt 设置
+var JWTAlg = "HS256"
+var JWTTyp = "JWT"
 
 func (rr *ResponseResult) ToJson() []byte {
 	resultJson, err := json.Marshal(rr)
@@ -22,11 +28,21 @@ func (rr *ResponseResult) ToJson() []byte {
 	}
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println(err)
+			ConsoleLogger.Println(err)
 		}
 	}()
 
 	return resultJson
+}
+func JWTCreator(payload jwtoken.PayLoad) string {
+	jwt := jwtoken.JWT{}
+	jwt.Header = jwtoken.Header{
+		Alg: JWTAlg,
+		Typ: JWTTyp,
+	}
+	jwt.PayLoad = payload
+	JWToken := jwt.Encode()
+	return JWToken
 }
 
 // func(writer http.ResponseWriter, request *http.Request) {

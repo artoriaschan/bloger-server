@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/artoriaschan/bloger-server/service"
-	"github.com/artoriaschan/bloger-server/utils/logging"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/artoriaschan/bloger-server/service"
+	"github.com/artoriaschan/bloger-server/utils/logging"
 )
 
 var appName = "bloger-server"
-var InfoLogger = logging.GetLogger(logging.InfoPath,"Info")
+var InfoLogger = logging.GetLogger(logging.InfoPath, "Info")
+
 func main() {
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {

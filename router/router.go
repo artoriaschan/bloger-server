@@ -20,7 +20,7 @@ func NewHandler() http.Handler {
 	}
 	// 添加cors设置
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   []string{"http://localhost:3000","http://localhost:8000"},
 		AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,

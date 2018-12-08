@@ -2,7 +2,6 @@ package controller
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 )
 
@@ -17,7 +16,7 @@ func IndexTemplate(writer http.ResponseWriter, request *http.Request) {
 	}
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println(err)
+			ConsoleLogger.Println(err)
 		}
 	}()
 }

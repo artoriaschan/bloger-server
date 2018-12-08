@@ -1,22 +1,24 @@
 package model
+
 import (
-	"gopkg.in/mgo.v2"
 	"log"
+
+	"gopkg.in/mgo.v2"
 )
 
 var GlobalMgoSession *mgo.Session
 var dbName string = "bloger"
 
-func init(){
+func init() {
 	db := ConnectToDB()
 	SetDB(db)
 }
 
-func SetDB(session *mgo.Session){
+func SetDB(session *mgo.Session) {
 	GlobalMgoSession = session
 }
 
-func ConnectToDB() *mgo.Session{
+func ConnectToDB() *mgo.Session {
 	GlobalMgoSession, err := mgo.Dial("localhost:27017")
 
 	if err != nil {
@@ -32,8 +34,9 @@ func ConnectToDB() *mgo.Session{
 
 	return GlobalMgoSession
 }
+
 // 插入
-func Insert(collectionName string, documents interface{}) bool{
+func Insert(collectionName string, documents interface{}) bool {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
@@ -42,13 +45,14 @@ func Insert(collectionName string, documents interface{}) bool{
 	err := collection.Insert(documents)
 
 	if err != nil {
-		log.Println( err.Error())
+		log.Println(err.Error())
 		return false
 	}
 	return true
 }
+
 // 查找
-func Find(collectionName string, M interface{}, result interface{}) bool{
+func Find(collectionName string, M interface{}, result interface{}) bool {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
@@ -56,20 +60,37 @@ func Find(collectionName string, M interface{}, result interface{}) bool{
 
 	err := collection.Find(M).One(result)
 	if err != nil {
-		log.Println( err.Error())
+		log.Println(err.Error())
 		return false
 	}
 	return true
 }
+
+// 查找
+func FindId(collectionName string, M interface{}, result interface{}) bool {
+	session := GlobalMgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(dbName).C(collectionName)
+
+	err := collection.FindId(M).One(result)
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+	return true
+}
+
 // 删除
-func Remove(collectionName string){
+func Remove(collectionName string) {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
 	//collection := session.DB(dbName).C(collectionName)
 }
+
 // 更新
-func Update(collectionName string){
+func Update(collectionName string) {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
