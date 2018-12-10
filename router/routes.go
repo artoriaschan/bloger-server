@@ -58,4 +58,10 @@ var routes = Routes{
 		Pattern:     "/api/admin/users/delete/{userId}",
 		HandlerFunc: controller.DeleteUser,
 	},
+	Route{
+		Name:        "FreezeUser",
+		Method:      []string{"Get"},
+		Pattern:     "/api/admin/users/freeze/{userId}",
+		HandlerFunc: controller.FreezeUser,
+	},
 }

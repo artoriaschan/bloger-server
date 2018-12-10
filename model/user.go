@@ -57,21 +57,30 @@ func (u *User) CheckPassword(password string) bool {
 // 根据姓名查找
 func GetUserByUsername(value interface{}) (*User, bool) {
 	user := new(User)
-	flag := Find("user", bson.M{"username": value}, &user)
+	filter := bson.M{}
+	filter["username"] = value
+	filter["isdelete"] = false
+	flag := Find("user", filter, &user)
 	return user, flag
 }
 
 // 根据邮箱
 func GetUserByEmail(value interface{}) (*User, bool) {
 	user := new(User)
-	flag := Find("user", bson.M{"email": value}, &user)
+	filter := bson.M{}
+	filter["email"] = value
+	filter["isdelete"] = false
+	flag := Find("user", filter, &user)
 	return user, flag
 }
 
 // 根据Id
 func GetUserById(value interface{}) (*User, bool) {
 	user := new(User)
-	flag := Find("user", bson.M{"_id": value}, &user)
+	filter := bson.M{}
+	filter["_id"] = value
+	filter["isdelete"] = false
+	flag := Find("user", filter, &user)
 	return user, flag
 }
 
@@ -93,6 +102,8 @@ func GetUsers(filter bson.M, skip, limit int) (*[]OutPutUser, bool) {
 	flag := FindAll("user", filter, field, outPutUsers, skip, limit)
 	return outPutUsers, flag
 }
+
+//删除用户
 func DeleteUser(id interface{}) bool {
 	selector := bson.M{"_id": bson.ObjectIdHex(id.(string))}
 	data := bson.M{"$set": bson.M{"isdelete": true}}
@@ -103,5 +114,13 @@ func DeleteUser(id interface{}) bool {
 // 增加用户
 func InsertUser(user *User) bool {
 	flag := Insert("user", user)
+	return flag
+}
+
+// 冻结用户账户
+func FreezeUser(id interface{}) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id.(string))}
+	data := bson.M{"$set": bson.M{"freezen": true}}
+	flag := Update("user", selector, data)
 	return flag
 }
