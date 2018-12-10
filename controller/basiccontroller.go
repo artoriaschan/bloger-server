@@ -14,6 +14,16 @@ type ResponseResult struct {
 	Data    interface{} `json:"data"`
 }
 
+type ResponseList struct {
+	List       interface{} `json:"list"`
+	Pagination Pagination  `json:"pagination"`
+}
+type Pagination struct {
+	Total       int `json:"total"`
+	CurrentPage int `json:"currentPage"`
+	PageSize    int `json:"pageSize"`
+}
+
 var AccessLogger = logging.GetLogger(logging.AccessPath, "Info")
 var ConsoleLogger = logging.GetConsoleLogger()
 var globalSessions *session.Manager

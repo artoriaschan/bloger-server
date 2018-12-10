@@ -46,4 +46,16 @@ var routes = Routes{
 		Pattern:     "/api/currentAdmin",
 		HandlerFunc: controller.CurrentAdmin,
 	},
+	Route{
+		Name:        "GetUsers",
+		Method:      []string{"Get"},
+		Pattern:     "/api/admin/users",
+		HandlerFunc: controller.GetUsers,
+	},
+	Route{
+		Name:        "DeleteUser",
+		Method:      []string{"Get"},
+		Pattern:     "/api/admin/users/delete/{userId}",
+		HandlerFunc: controller.DeleteUser,
+	},
 }

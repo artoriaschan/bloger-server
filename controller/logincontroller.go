@@ -86,6 +86,7 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 	if isSuccess {
 		sess := globalSessions.SessionStart(writer, request)
 		sess.Set("loginUser", *user)
+		sess.Set("isAdmin", false)
 	}
 	writer.Write(result)
 
@@ -149,7 +150,7 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 	if flag {
 		if user.Type != 2 {
 			responseResult := ResponseResult{
-				Code:    WrongParams,
+				Code:    NoRight,
 				Message: "该账号无权限登录",
 				Data:    nil,
 			}
@@ -158,7 +159,8 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 			return
 		} else {
 			sess := globalSessions.SessionStart(writer, request)
-			sess.Set("loginAdmin", user.Id)
+			sess.Set("loginAdmin", *user)
+			sess.Set("isAdmin", true)
 			responseResult := ResponseResult{
 				Code:    OK,
 				Message: "查询成功",
@@ -168,17 +170,6 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 				},
 			}
 			result := responseResult.ToJson()
-			// 写入cookie
-			// COOKIE_MAX_MAX_AGE := time.Hour * 24 / time.Second // 单位：秒。
-			// maxAge := int(COOKIE_MAX_MAX_AGE)
-			// cookie := http.Cookie{
-			// 	Name:     "go_jwt",
-			// 	Value:    AccessToken,
-			// 	Path:     "/",
-			// 	HttpOnly: true,
-			// 	MaxAge:   maxAge,
-			// }
-			// http.SetCookie(writer, &cookie)
 			writer.Write(result)
 			return
 		}
@@ -311,7 +302,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		result = responseResult.ToJson()
 	} else {
 		responseResult = ResponseResult{
-			Code:    NoRegister,
+			Code:    BadServer,
 			Message: "注册失败",
 			Data:    nil,
 		}

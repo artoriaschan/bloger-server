@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var GlobalMgoSession *mgo.Session
@@ -66,7 +67,7 @@ func Find(collectionName string, M interface{}, result interface{}) bool {
 	return true
 }
 
-// 查找
+// 根据ID查找
 func FindId(collectionName string, M interface{}, result interface{}) bool {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
@@ -81,16 +82,37 @@ func FindId(collectionName string, M interface{}, result interface{}) bool {
 	return true
 }
 
-// 删除
-func Remove(collectionName string) {
+// 查找全部
+func FindAll(collectionName string, filter bson.M, fields bson.M, users interface{}, skip, limit int) bool {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
-	//collection := session.DB(dbName).C(collectionName)
+	collection := session.DB(dbName).C(collectionName)
+	err := collection.Find(filter).Select(fields).Skip(skip).Limit(limit).All(users)
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+	return true
 }
 
 // 更新
-func Update(collectionName string) {
+func Update(collectionName string, selector, data bson.M) bool {
+	session := GlobalMgoSession.Clone()
+	defer session.Close()
+
+	collection := session.DB(dbName).C(collectionName)
+
+	err := collection.Update(selector, data)
+	if err != nil {
+		log.Println(err.Error())
+		return false
+	}
+	return true
+}
+
+// 删除
+func Remove(collectionName string) {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 

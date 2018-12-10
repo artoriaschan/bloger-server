@@ -34,6 +34,18 @@ type User struct {
 	IsDelete     bool            `bson:"isdelete" json:"isdelete"`
 }
 
+type OutPutUser struct {
+	Id           bson.ObjectId `bson:"_id" json:"id"`
+	Username     string        `bson:"username" json:"username"`
+	Email        string        `bson:"email" json:"email"`
+	Mobile       string        `bson:"mobile" json:"mobile"`
+	Registertime int64         `bson:"registertime" json:"registerTime"` // 时间戳
+	Description  string        `bson:"description" json:"description"`
+	Type         int           `bson:"type" json:"type"`
+	Avatar       string        `bson:"avatar" json:"avatar"`
+	Freezen      bool          `bson:"freezen" json:"freezen"`
+}
+
 func (u *User) SetPassword(password string) {
 	u.Password = GeneratePasswordHash(password)
 }
@@ -61,6 +73,31 @@ func GetUserById(value interface{}) (*User, bool) {
 	user := new(User)
 	flag := Find("user", bson.M{"_id": value}, &user)
 	return user, flag
+}
+
+// 获取用户列表
+func GetUsers(filter bson.M, skip, limit int) (*[]OutPutUser, bool) {
+	outPutUsers := new([]OutPutUser)
+	field := bson.M{
+		"_id":          1,
+		"username":     1,
+		"email":        1,
+		"mobile":       1,
+		"registertime": 1,
+		"description":  1,
+		"type":         1,
+		"avatar":       1,
+		"freezen":      1,
+	}
+	filter["isdelete"] = false
+	flag := FindAll("user", filter, field, outPutUsers, skip, limit)
+	return outPutUsers, flag
+}
+func DeleteUser(id interface{}) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id.(string))}
+	data := bson.M{"$set": bson.M{"isdelete": true}}
+	flag := Update("user", selector, data)
+	return flag
 }
 
 // 增加用户
