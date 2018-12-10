@@ -8,9 +8,10 @@ import (
 	"encoding/json"
 	"gopkg.in/mgo.v2/bson" // "fmt"
 	"strings"
+	"time"
 )
 
-// SALT 密钥
+// SALT 密钥, 不要暴露出去
 const SALT = "1bitcode"
 
 // Header 消息头部
@@ -21,11 +22,12 @@ type Header struct {
 
 // PayLoad 负载
 type PayLoad struct {
-	Sub   string        `json:"sub"`
-	Aud   bson.ObjectId `json:"aud"`
-	Name  string        `json:"name"`
-	Admin bool          `json:"admin"`
-	// Expire int `json:"exp"`
+	Sub    string        `json:"sub"`
+	Aud    bson.ObjectId `json:"aud"`
+	Name   string        `json:"name"`
+	Admin  bool          `json:"admin"`
+	Expire int64         `json:"exp"`
+	Code   string        `json:"code"`
 }
 
 // JWT 完整的本体
@@ -81,6 +83,28 @@ func (jwt *JWT) Decode(code string) bool {
 	json.Unmarshal(payload, &jwt.PayLoad)
 
 	return true
+}
+
+/*
+	判断Token是否过期
+*/
+func (jwt *JWT) JWTExpire() bool {
+	if time.Now().UnixNano() > jwt.PayLoad.Expire {
+		return true
+	}
+	return false
+}
+
+/*
+	请求后,在有效期内再刷新accessToken
+*/
+func (jwt *JWT) RefreshJWT() bool {
+	// 过期时间小于5分钟时再刷新
+	if (jwt.PayLoad.Expire - time.Now().UnixNano()) < (time.Minute * 5).Nanoseconds() {
+		jwt.PayLoad.Expire = time.Now().Add(time.Duration(time.Minute * 15)).UnixNano()
+		return true
+	}
+	return false
 }
 
 func checkError(err error) {

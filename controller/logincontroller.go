@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/artoriaschan/bloger-server/model"
-	"github.com/artoriaschan/bloger-server/utils/jwt"
 	"github.com/artoriaschan/bloger-server/utils/logging"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -85,25 +84,8 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 	}
 	result, user, isSuccess := userLoginHandle(email, password)
 	if isSuccess {
-		// 生成JWT
-		payload := jwtoken.PayLoad{
-			Sub:   JWTLogin,
-			Aud:   user.Id,
-			Name:  user.Username,
-			Admin: user.Type == 2,
-		}
-		JWToken := JWTCreator(payload)
-		// 写入cookie
-		COOKIE_MAX_MAX_AGE := time.Hour * 24 * 15 / time.Second // 单位：秒。
-		maxAge := int(COOKIE_MAX_MAX_AGE)
-		cookie := http.Cookie{
-			Name:     "go_jwt",
-			Value:    JWToken,
-			Path:     "/",
-			HttpOnly: true,
-			MaxAge:   maxAge,
-		}
-		http.SetCookie(writer, &cookie)
+		sess := globalSessions.SessionStart(writer, request)
+		sess.Set("loginUser", *user)
 	}
 	writer.Write(result)
 
@@ -136,7 +118,7 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 	}
 	accessJson, _ := json.Marshal(access)
 	AccessLogger.Println(string(accessJson))
-	querys, err := url.ParseQuery(string(bodyStr))
+	querys, err := url.ParseQuery(bodyStr)
 	if err != nil {
 		panic(err)
 	}
@@ -149,6 +131,8 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 	ConsoleLogger.Println(querys)
 	email := querys["email"][0]
 	password := querys["password"][0]
+	autoLogin := querys["autoLogin"][0]
+	ConsoleLogger.Println("autoLogin", autoLogin)
 	user := new(model.User)
 	user, hasUser := model.GetUserByEmail(email)
 	if !hasUser {
@@ -173,14 +157,8 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 			writer.Write(result)
 			return
 		} else {
-			// 生成JWT
-			payload := jwtoken.PayLoad{
-				Sub:   JWTLogin,
-				Aud:   user.Id,
-				Name:  user.Username,
-				Admin: user.Type == 2,
-			}
-			JWToken := JWTCreator(payload)
+			sess := globalSessions.SessionStart(writer, request)
+			sess.Set("loginAdmin", user.Id)
 			responseResult := ResponseResult{
 				Code:    OK,
 				Message: "查询成功",
@@ -191,16 +169,16 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 			}
 			result := responseResult.ToJson()
 			// 写入cookie
-			COOKIE_MAX_MAX_AGE := time.Hour * 24 / time.Second // 单位：秒。
-			maxAge := int(COOKIE_MAX_MAX_AGE)
-			cookie := http.Cookie{
-				Name:     "go_jwt",
-				Value:    JWToken,
-				Path:     "/",
-				HttpOnly: true,
-				MaxAge:   maxAge,
-			}
-			http.SetCookie(writer, &cookie)
+			// COOKIE_MAX_MAX_AGE := time.Hour * 24 / time.Second // 单位：秒。
+			// maxAge := int(COOKIE_MAX_MAX_AGE)
+			// cookie := http.Cookie{
+			// 	Name:     "go_jwt",
+			// 	Value:    AccessToken,
+			// 	Path:     "/",
+			// 	HttpOnly: true,
+			// 	MaxAge:   maxAge,
+			// }
+			// http.SetCookie(writer, &cookie)
 			writer.Write(result)
 			return
 		}

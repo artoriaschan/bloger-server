@@ -41,7 +41,7 @@ var routes = Routes{
 		HandlerFunc: controller.Register,
 	},
 	Route{
-		Name:		 "CurrentAdmin",
+		Name:        "CurrentAdmin",
 		Method:      []string{"Get"},
 		Pattern:     "/api/currentAdmin",
 		HandlerFunc: controller.CurrentAdmin,

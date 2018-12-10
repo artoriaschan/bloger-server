@@ -3,8 +3,9 @@ package controller
 import (
 	"encoding/json"
 
-	"github.com/artoriaschan/bloger-server/utils/jwt"
 	"github.com/artoriaschan/bloger-server/utils/logging"
+	_ "github.com/artoriaschan/bloger-server/utils/memory"
+	"github.com/artoriaschan/bloger-server/utils/session"
 )
 
 type ResponseResult struct {
@@ -15,10 +16,29 @@ type ResponseResult struct {
 
 var AccessLogger = logging.GetLogger(logging.AccessPath, "Info")
 var ConsoleLogger = logging.GetConsoleLogger()
+var globalSessions *session.Manager
 
-// jwt 设置
-var JWTAlg = "HS256"
-var JWTTyp = "JWT"
+//然后在init函数中初始化
+func init() {
+	var err error
+	globalSessions, err = session.NewManager("memory", "GO_SESSION_ID", 3600)
+	if err != nil {
+		ConsoleLogger.Println(err)
+	}
+	go globalSessions.GC()
+}
+
+// func(writer http.ResponseWriter, request *http.Request) {
+// 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+// 	writer.WriteHeader(http.StatusOK)
+// 	writer.Write([]byte("{'path':'/','result':'ok'}"))
+// 	//// Case 1: w.Write byte
+// 	//w.Write([]byte("Hello World"))
+// 	//// Case 2: fmt.Fprintf
+// 	//fmt.Fprintf(w, "Hello World")
+// 	//// Case 3: io.Write
+// 	//io.WriteString(w, "Hello World")
+// },
 
 func (rr *ResponseResult) ToJson() []byte {
 	resultJson, err := json.Marshal(rr)
@@ -34,25 +54,3 @@ func (rr *ResponseResult) ToJson() []byte {
 
 	return resultJson
 }
-func JWTCreator(payload jwtoken.PayLoad) string {
-	jwt := jwtoken.JWT{}
-	jwt.Header = jwtoken.Header{
-		Alg: JWTAlg,
-		Typ: JWTTyp,
-	}
-	jwt.PayLoad = payload
-	JWToken := jwt.Encode()
-	return JWToken
-}
-
-// func(writer http.ResponseWriter, request *http.Request) {
-// 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
-// 	writer.WriteHeader(http.StatusOK)
-// 	writer.Write([]byte("{'path':'/','result':'ok'}"))
-// 	//// Case 1: w.Write byte
-// 	//w.Write([]byte("Hello World"))
-// 	//// Case 2: fmt.Fprintf
-// 	//fmt.Fprintf(w, "Hello World")
-// 	//// Case 3: io.Write
-// 	//io.WriteString(w, "Hello World")
-// },
