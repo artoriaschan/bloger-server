@@ -64,4 +64,10 @@ var routes = Routes{
 		Pattern:     "/api/admin/users/freeze/{userId}",
 		HandlerFunc: controller.FreezeUser,
 	},
+	Route{
+		Name:        "CurrentUser",
+		Method:      []string{"Get"},
+		Pattern:     "/api/current/user",
+		HandlerFunc: controller.CurrentUser,
+	},
 }

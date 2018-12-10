@@ -53,13 +53,13 @@ func Insert(collectionName string, documents interface{}) bool {
 }
 
 // 查找
-func Find(collectionName string, M interface{}, result interface{}) bool {
+func Find(collectionName string, filter bson.M, result interface{}) bool {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(dbName).C(collectionName)
 
-	err := collection.Find(M).One(result)
+	err := collection.Find(filter).One(result)
 	if err != nil {
 		log.Println(err.Error())
 		return false

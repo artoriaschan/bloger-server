@@ -51,13 +51,49 @@ func CurrentAdmin(writer http.ResponseWriter, request *http.Request) {
 	responseResult := ResponseResult{
 		Code:    OK,
 		Message: "查询成功",
-		Data:    admin,
+		Data:    admin.ToOutputUser(),
 	}
 	result := responseResult.ToJson()
 	writer.Write(result)
 	return
 }
-
+func CurrentUser(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	defer func() {
+		if err := recover(); err != nil {
+			ConsoleLogger.Println(err)
+			responseResult := ResponseResult{
+				Code:    BadServer,
+				Message: "服务异常,请稍后再试",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+		}
+	}()
+	sess := globalSessions.SessionStart(writer, request)
+	// TODO 判断是否为空
+	if sess.Get("loginUser") == nil {
+		responseResult := ResponseResult{
+			Code:    NoLogin,
+			Message: "您未登录,请登录账号",
+			Data:    nil,
+		}
+		result := responseResult.ToJson()
+		writer.Write(result)
+		return
+	}
+	user := sess.Get("loginUser").(model.User)
+	// user, ok := model.GetUserById(adminId)
+	responseResult := ResponseResult{
+		Code:    OK,
+		Message: "查询成功",
+		Data:    user.ToOutputUser(),
+	}
+	result := responseResult.ToJson()
+	writer.Write(result)
+	return
+}
 func GetUsers(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	defer func() {

@@ -54,6 +54,22 @@ func (u *User) CheckPassword(password string) bool {
 	return GeneratePasswordHash(password) == u.Password
 }
 
+// 转化
+func (u *User) ToOutputUser() OutPutUser {
+	outputUser := new(OutPutUser)
+	outputUser.Id = u.Id
+	outputUser.Username = u.Username
+	outputUser.Email = u.Email
+	outputUser.Mobile = u.Mobile
+	outputUser.Registertime = u.Registertime
+	outputUser.Description = u.Description
+	outputUser.Type = u.Type
+	outputUser.Avatar = u.Avatar
+	outputUser.Freezen = u.Freezen
+
+	return *outputUser
+}
+
 // 根据姓名查找
 func GetUserByUsername(value interface{}) (*User, bool) {
 	user := new(User)

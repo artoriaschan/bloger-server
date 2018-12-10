@@ -17,7 +17,7 @@ import (
 )
 
 type AdminUser struct {
-	model.User
+	model.OutPutUser
 	CurrentAuthority string `json:"currentAuthority"`
 }
 type AdminLoginBody struct {
@@ -29,12 +29,20 @@ func userLoginHandle(email, password string) ([]byte, *model.User, bool) {
 	var result []byte
 	var isSuccess bool
 	user := new(model.User)
-	//hasUser := model.GetUserByUsername(username, &user)
 	user, hasUser := model.GetUserByEmail(email)
 	if !hasUser {
 		responseResult := ResponseResult{
 			Code:    NoRegister,
 			Message: "该邮箱没有注册",
+			Data:    nil,
+		}
+		result = responseResult.ToJson()
+		isSuccess = false
+		return result, nil, isSuccess
+	} else if user.Freezen {
+		responseResult := ResponseResult{
+			Code:    FreezenAccount,
+			Message: "该账号已被冻结",
 			Data:    nil,
 		}
 		result = responseResult.ToJson()
@@ -46,7 +54,7 @@ func userLoginHandle(email, password string) ([]byte, *model.User, bool) {
 		responseResult := ResponseResult{
 			Code:    OK,
 			Message: "查询成功",
-			Data:    *user,
+			Data:    user.ToOutputUser(),
 		}
 		result = responseResult.ToJson()
 		isSuccess = true
@@ -86,7 +94,8 @@ func Login(writer http.ResponseWriter, request *http.Request) {
 	if isSuccess {
 		sess := globalSessions.SessionStart(writer, request)
 		sess.Set("loginUser", *user)
-		sess.Set("isAdmin", false)
+		sess.Set("login", true)
+		sess.Set("isAdmin", user.Type == 2)
 	}
 	writer.Write(result)
 
@@ -145,6 +154,15 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 		result := responseResult.ToJson()
 		writer.Write(result)
 		return
+	} else if user.Freezen {
+		responseResult := ResponseResult{
+			Code:    FreezenAccount,
+			Message: "该账号已被冻结",
+			Data:    nil,
+		}
+		result := responseResult.ToJson()
+		writer.Write(result)
+		return
 	}
 	flag := user.CheckPassword(password)
 	if flag {
@@ -160,12 +178,13 @@ func AdminLogin(writer http.ResponseWriter, request *http.Request) {
 		} else {
 			sess := globalSessions.SessionStart(writer, request)
 			sess.Set("loginAdmin", *user)
+			sess.Set("login", true)
 			sess.Set("isAdmin", true)
 			responseResult := ResponseResult{
 				Code:    OK,
 				Message: "查询成功",
 				Data: AdminUser{
-					User:             *user,
+					OutPutUser:       user.ToOutputUser(),
 					CurrentAuthority: user.Email,
 				},
 			}
@@ -297,7 +316,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		responseResult = ResponseResult{
 			Code:    OK,
 			Message: "注册成功",
-			Data:    user,
+			Data:    user.ToOutputUser(),
 		}
 		result = responseResult.ToJson()
 	} else {
