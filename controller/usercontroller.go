@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -34,6 +35,9 @@ func CurrentAdmin(writer http.ResponseWriter, request *http.Request) {
 	}()
 	sess := globalSessions.SessionStart(writer, request)
 	// TODO 判断是否为空
+	if sess.Get("loginAdmin") == nil {
+		panic(fmt.Errorf("未登录"))
+	}
 	admin := sess.Get("loginAdmin").(model.User)
 	isAdmin := sess.Get("isAdmin").(bool) //通过断言实现类型转换
 	if !isAdmin {
@@ -334,6 +338,87 @@ func FreezeUser(writer http.ResponseWriter, request *http.Request) {
 			responseResult := ResponseResult{
 				Code:    BadDB,
 				Message: "冻结失败",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+			return
+		}
+	} else {
+		responseResult := ResponseResult{
+			Code:    NoRight,
+			Message: "该账号无权限,请更换账号进行操作",
+			Data:    nil,
+		}
+		result := responseResult.ToJson()
+		writer.Write(result)
+	}
+}
+func ActivteUser(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	defer func() {
+		if err := recover(); err != nil {
+			ConsoleLogger.Println(err)
+			responseResult := ResponseResult{
+				Code:    BadServer,
+				Message: "服务异常,请稍后再试",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+		}
+	}()
+	vars := mux.Vars(request)
+	userId := vars["userId"]
+	if userId == "" {
+		writer.WriteHeader(http.StatusNotFound)
+		responseResult := ResponseResult{
+			Code:    BadServer,
+			Message: "未知路径",
+			Data:    nil,
+		}
+		result := responseResult.ToJson()
+		writer.Write(result)
+	}
+	// 从session中获取登录认证信息
+	sess := globalSessions.SessionStart(writer, request)
+	isAdmin := sess.Get("isAdmin").(bool) //通过断言实现类型转换
+	if isAdmin {
+		flag := model.ActivteUser(userId)
+		if flag {
+			skip := pageSize * (currentPage - 1)
+			limit := pageSize
+			users, ok := model.GetUsers(bson.M{}, skip, limit)
+			if ok {
+				responseResult := ResponseResult{
+					Code:    OK,
+					Message: "解冻成功",
+					Data: ResponseList{
+						List: *users,
+						Pagination: Pagination{
+							Total:       len(*users),
+							PageSize:    pageSize,
+							CurrentPage: currentPage,
+						},
+					},
+				}
+				result := responseResult.ToJson()
+				writer.Write(result)
+				return
+			} else {
+				responseResult := ResponseResult{
+					Code:    BadDB,
+					Message: "查询失败",
+					Data:    nil,
+				}
+				result := responseResult.ToJson()
+				writer.Write(result)
+				return
+			}
+		} else {
+			responseResult := ResponseResult{
+				Code:    BadDB,
+				Message: "解冻失败",
 				Data:    nil,
 			}
 			result := responseResult.ToJson()

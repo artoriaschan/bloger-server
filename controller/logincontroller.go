@@ -303,7 +303,7 @@ func userRegisterHandle(email, username, mobile, password string, user *model.Us
 		Username:     username,
 		Email:        email,
 		Mobile:       mobile,
-		Registertime: time.Now().UnixNano(),
+		Registertime: time.Now().Unix(),
 		Type:         1,
 		Freezen:      false,
 		IsDelete:     false,

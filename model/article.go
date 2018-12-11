@@ -45,3 +45,15 @@ type Meta struct {
 	Like  int `bson:"like" json:"like"`
 	Num   int `bson:"num" json:"num"`
 }
+
+/*
+// 增加用户
+func InsertUser(user *User) bool {
+	flag := Insert("user", user)
+	return flag
+}
+*/
+func InsertArticle(article *Article) bool {
+	flag := Insert("article", article)
+	return flag
+}

@@ -60,7 +60,8 @@ func NewManager(provideName, cookieName string, maxLifeTime int64) (*Manager, er
 
 // 生成全局唯一的sessionID
 func (manager *Manager) sessionId() string {
-	b := make([]byte, 32)
+	// uuid := uuid.NewUUID()
+	b := make([]byte, 128)
 	if _, err := rand.Read(b); err != nil {
 		return ""
 	}

@@ -23,22 +23,28 @@ var routes = Routes{
 		HandlerFunc: controller.IndexTemplate,
 	},
 	Route{
+		Name:        "Register",
+		Method:      []string{"Post"},
+		Pattern:     "/api/register",
+		HandlerFunc: controller.Register,
+	},
+	Route{
 		Name:        "Login",
 		Method:      []string{"Post"},
 		Pattern:     "/api/login",
 		HandlerFunc: controller.Login,
 	},
 	Route{
+		Name:        "CurrentUser",
+		Method:      []string{"Get"},
+		Pattern:     "/api/current/user",
+		HandlerFunc: controller.CurrentUser,
+	},
+	Route{
 		Name:        "AdminLogin",
 		Method:      []string{"Post"},
 		Pattern:     "/api/admin/login",
 		HandlerFunc: controller.AdminLogin,
-	},
-	Route{
-		Name:        "Register",
-		Method:      []string{"Post"},
-		Pattern:     "/api/register",
-		HandlerFunc: controller.Register,
 	},
 	Route{
 		Name:        "CurrentAdmin",
@@ -65,9 +71,29 @@ var routes = Routes{
 		HandlerFunc: controller.FreezeUser,
 	},
 	Route{
-		Name:        "CurrentUser",
+		Name:        "ActivteUser",
 		Method:      []string{"Get"},
-		Pattern:     "/api/current/user",
-		HandlerFunc: controller.CurrentUser,
+		Pattern:     "/api/admin/users/activite/{userId}",
+		HandlerFunc: controller.ActivteUser,
+	},
+	// 文章相关
+	Route{
+		Name:        "AddArticle",
+		Method:      []string{"Post"},
+		Pattern:     "/api/article/post",
+		HandlerFunc: controller.AddArticle,
+	},
+	// 分类相关
+	Route{
+		Name:        "AddCategory",
+		Method:      []string{"Post"},
+		Pattern:     "/api/cate/post",
+		HandlerFunc: controller.AddCategory,
+	},
+	Route{
+		Name:        "QueryCategories",
+		Method:      []string{"Get"},
+		Pattern:     "/api/cates",
+		HandlerFunc: controller.QueryCategories,
 	},
 }

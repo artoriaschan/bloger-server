@@ -25,7 +25,7 @@ type User struct {
 	Email        string          `bson:"email" json:"email"`
 	Password     string          `bson:"password" json:"password"`
 	Mobile       string          `bson:"mobile" json:"mobile"`
-	Registertime int64           `bson:"registertime" json:"registerTime"` // 时间戳
+	Registertime int64           `bson:"registertime" json:"registertime"` // 时间戳
 	Description  string          `bson:"description" json:"description"`
 	Articles     []bson.ObjectId `bson:"articles" json:"articles"`
 	Type         int             `bson:"type" json:"type"`
@@ -39,7 +39,7 @@ type OutPutUser struct {
 	Username     string        `bson:"username" json:"username"`
 	Email        string        `bson:"email" json:"email"`
 	Mobile       string        `bson:"mobile" json:"mobile"`
-	Registertime int64         `bson:"registertime" json:"registerTime"` // 时间戳
+	Registertime int64         `bson:"registertime" json:"registertime"` // 时间戳
 	Description  string        `bson:"description" json:"description"`
 	Type         int           `bson:"type" json:"type"`
 	Avatar       string        `bson:"avatar" json:"avatar"`
@@ -137,6 +137,14 @@ func InsertUser(user *User) bool {
 func FreezeUser(id interface{}) bool {
 	selector := bson.M{"_id": bson.ObjectIdHex(id.(string))}
 	data := bson.M{"$set": bson.M{"freezen": true}}
+	flag := Update("user", selector, data)
+	return flag
+}
+
+// 解冻用户账户
+func ActivteUser(id interface{}) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id.(string))}
+	data := bson.M{"$set": bson.M{"freezen": false}}
 	flag := Update("user", selector, data)
 	return flag
 }
