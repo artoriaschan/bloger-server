@@ -83,17 +83,22 @@ func FindId(collectionName string, M interface{}, result interface{}) bool {
 }
 
 // 查找全部
-func FindAll(collectionName string, filter bson.M, fields bson.M, users interface{}, skip, limit int) bool {
+func FindAll(collectionName string, filter bson.M, fields bson.M, users interface{}, skip, limit int) (int, bool) {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
 
 	collection := session.DB(dbName).C(collectionName)
-	err := collection.Find(filter).Select(fields).Skip(skip).Limit(limit).All(users)
+	countNum, err := collection.Count()
 	if err != nil {
 		log.Println(err.Error())
-		return false
+		return 0, false
 	}
-	return true
+	err = collection.Find(filter).Select(fields).Skip(skip).Limit(limit).All(users)
+	if err != nil {
+		log.Println(err.Error())
+		return 0, false
+	}
+	return countNum, true
 }
 
 // 更新

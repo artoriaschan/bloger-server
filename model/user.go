@@ -101,7 +101,7 @@ func GetUserById(value interface{}) (*User, bool) {
 }
 
 // 获取用户列表
-func GetUsers(filter bson.M, skip, limit int) (*[]OutPutUser, bool) {
+func GetUsers(filter bson.M, skip, limit int) (*[]OutPutUser, int, bool) {
 	outPutUsers := new([]OutPutUser)
 	field := bson.M{
 		"_id":          1,
@@ -115,8 +115,8 @@ func GetUsers(filter bson.M, skip, limit int) (*[]OutPutUser, bool) {
 		"freezen":      1,
 	}
 	filter["isdelete"] = false
-	flag := FindAll("user", filter, field, outPutUsers, skip, limit)
-	return outPutUsers, flag
+	countNum, flag := FindAll("user", filter, field, outPutUsers, skip, limit)
+	return outPutUsers, countNum, flag
 }
 
 //删除用户

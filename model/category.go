@@ -35,7 +35,7 @@ func InsertCategory(category *Category) bool {
 }
 
 // 获取分类列表
-func GetCategories(filter bson.M, skip, limit int) (*[]OutputCategory, bool) {
+func GetCategories(filter bson.M, skip, limit int) (*[]OutputCategory, int, bool) {
 	cateList := new([]OutputCategory)
 	field := bson.M{
 		"_id":        1,
@@ -45,6 +45,6 @@ func GetCategories(filter bson.M, skip, limit int) (*[]OutputCategory, bool) {
 		"creater":    1,
 	}
 	filter["isdelete"] = false
-	flag := FindAll("category", filter, field, cateList, skip, limit)
-	return cateList, flag
+	countNum, flag := FindAll("category", filter, field, cateList, skip, limit)
+	return cateList, countNum, flag
 }

@@ -13,11 +13,12 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type ReceiveCategory struct {
-	Catename string `json:"catename"`
+type ReceiveTag struct {
+	Tagname string `json:"tagname"`
+	Color   string `json:"color"`
 }
 
-func GetCategories(filter bson.M, writer http.ResponseWriter, request *http.Request) (*[]model.OutputCategory, int, int, int, error) {
+func GetTags(filter bson.M, writer http.ResponseWriter, request *http.Request) (*[]model.OutputTag, int, int, int, error) {
 	// 获取参数,currentPage和pageSize
 	query, _ := url.ParseQuery(request.URL.RawQuery)
 	var currentPageQuery string
@@ -37,16 +38,16 @@ func GetCategories(filter bson.M, writer http.ResponseWriter, request *http.Requ
 	currentPage, _ = strconv.Atoi(currentPageQuery)
 	skip := pageSize * (currentPage - 1)
 	limit := pageSize
-	cates, num, ok := model.GetCategories(filter, skip, limit)
+	tags, num, ok := model.GetTags(filter, skip, limit)
 	if ok {
-		return cates, num, currentPage, pageSize, nil
+		return tags, num, currentPage, pageSize, nil
 	} else {
 		return nil, 0, currentPage, pageSize, nil
 	}
 }
 
-// /api/cates
-func QueryCategories(writer http.ResponseWriter, request *http.Request) {
+// /api/tags
+func QueryTags(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	defer func() {
 		if err := recover(); err != nil {
@@ -66,16 +67,16 @@ func QueryCategories(writer http.ResponseWriter, request *http.Request) {
 	if isAdmin {
 		// 创建筛选条件
 		var filter = bson.M{}
-		cates, num, currentPage, pageSize, err := GetCategories(filter, writer, request)
+		tags, num, currentPage, pageSize, err := GetTags(filter, writer, request)
 		if err != nil {
 			panic(err)
 		}
-		ConsoleLogger.Println(*cates)
+		ConsoleLogger.Println(*tags)
 		responseResult := ResponseResult{
 			Code:    OK,
 			Message: "查询成功",
 			Data: ResponseList{
-				List: *cates,
+				List: *tags,
 				Pagination: Pagination{
 					Total:       num,
 					PageSize:    pageSize,
@@ -91,14 +92,14 @@ func QueryCategories(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-// /api/cate/post
-func AddCategory(writer http.ResponseWriter, request *http.Request) {
+// /api/tag/post
+func AddTag(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	body, _ := ioutil.ReadAll(request.Body)
 	ConsoleLogger.Println(string(body))
 
-	rc := &ReceiveCategory{}
-	err := json.Unmarshal(body, &rc)
+	rt := &ReceiveTag{}
+	err := json.Unmarshal(body, &rt)
 	if err != nil {
 		panic(err)
 	}
@@ -122,19 +123,20 @@ func AddCategory(writer http.ResponseWriter, request *http.Request) {
 	} else {
 		panic(fmt.Errorf("未登录"))
 	}
-	category := model.Category{
+	tag := model.Tag{
 		Id:         bson.NewObjectId(),
-		Catename:   rc.Catename,
+		Tagname:    rt.Tagname,
+		Color:      rt.Color,
 		Createtime: time.Now().Unix(),
 		Updatetime: time.Now().Unix(),
 		Creater:    user.Id,
 		Isdelete:   false,
 	}
-	flag := model.InsertCategory(&category)
+	flag := model.InsertTag(&tag)
 	if !flag {
 		panic(fmt.Errorf("插入失败"))
 	}
-	cates, num, currentPage, pageSize, err := GetCategories(bson.M{}, writer, request)
+	tags, num, currentPage, pageSize, err := GetTags(bson.M{}, writer, request)
 	if err != nil {
 		panic(err)
 	}
@@ -142,7 +144,7 @@ func AddCategory(writer http.ResponseWriter, request *http.Request) {
 		Code:    OK,
 		Message: "添加成功",
 		Data: ResponseList{
-			List: *cates,
+			List: *tags,
 			Pagination: Pagination{
 				Total:       num,
 				PageSize:    pageSize,

@@ -96,4 +96,17 @@ var routes = Routes{
 		Pattern:     "/api/cates",
 		HandlerFunc: controller.QueryCategories,
 	},
+	// 标签相关
+	Route{
+		Name:        "AddTag",
+		Method:      []string{"Post"},
+		Pattern:     "/api/tag/post",
+		HandlerFunc: controller.AddTag,
+	},
+	Route{
+		Name:        "QueryTags",
+		Method:      []string{"Get"},
+		Pattern:     "/api/tags",
+		HandlerFunc: controller.QueryTags,
+	},
 }

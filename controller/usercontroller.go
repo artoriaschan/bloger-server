@@ -154,7 +154,7 @@ func GetUsers(writer http.ResponseWriter, request *http.Request) {
 			filter["freezen"] = freezenBool
 		}
 		ConsoleLogger.Println(filter, skip, limit)
-		users, ok := model.GetUsers(filter, skip, limit)
+		users, num, ok := model.GetUsers(filter, skip, limit)
 		if ok {
 			responseResult := ResponseResult{
 				Code:    OK,
@@ -162,7 +162,7 @@ func GetUsers(writer http.ResponseWriter, request *http.Request) {
 				Data: ResponseList{
 					List: *users,
 					Pagination: Pagination{
-						Total:       len(*users),
+						Total:       num,
 						PageSize:    pageSize,
 						CurrentPage: currentPage,
 					},
@@ -226,7 +226,7 @@ func DeleteUser(writer http.ResponseWriter, request *http.Request) {
 		if flag {
 			skip := pageSize * (currentPage - 1)
 			limit := pageSize
-			users, ok := model.GetUsers(bson.M{}, skip, limit)
+			users, num, ok := model.GetUsers(bson.M{}, skip, limit)
 			if ok {
 				responseResult := ResponseResult{
 					Code:    OK,
@@ -234,7 +234,7 @@ func DeleteUser(writer http.ResponseWriter, request *http.Request) {
 					Data: ResponseList{
 						List: *users,
 						Pagination: Pagination{
-							Total:       len(*users),
+							Total:       num,
 							PageSize:    pageSize,
 							CurrentPage: currentPage,
 						},
@@ -307,7 +307,7 @@ func FreezeUser(writer http.ResponseWriter, request *http.Request) {
 		if flag {
 			skip := pageSize * (currentPage - 1)
 			limit := pageSize
-			users, ok := model.GetUsers(bson.M{}, skip, limit)
+			users, num, ok := model.GetUsers(bson.M{}, skip, limit)
 			if ok {
 				responseResult := ResponseResult{
 					Code:    OK,
@@ -315,7 +315,7 @@ func FreezeUser(writer http.ResponseWriter, request *http.Request) {
 					Data: ResponseList{
 						List: *users,
 						Pagination: Pagination{
-							Total:       len(*users),
+							Total:       num,
 							PageSize:    pageSize,
 							CurrentPage: currentPage,
 						},
@@ -388,7 +388,7 @@ func ActivteUser(writer http.ResponseWriter, request *http.Request) {
 		if flag {
 			skip := pageSize * (currentPage - 1)
 			limit := pageSize
-			users, ok := model.GetUsers(bson.M{}, skip, limit)
+			users, num, ok := model.GetUsers(bson.M{}, skip, limit)
 			if ok {
 				responseResult := ResponseResult{
 					Code:    OK,
@@ -396,7 +396,7 @@ func ActivteUser(writer http.ResponseWriter, request *http.Request) {
 					Data: ResponseList{
 						List: *users,
 						Pagination: Pagination{
-							Total:       len(*users),
+							Total:       num,
 							PageSize:    pageSize,
 							CurrentPage: currentPage,
 						},
