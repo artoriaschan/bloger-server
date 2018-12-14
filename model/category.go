@@ -48,3 +48,17 @@ func GetCategories(filter bson.M, skip, limit int) (*[]OutputCategory, int, bool
 	countNum, flag := FindAll("category", filter, field, cateList, skip, limit)
 	return cateList, countNum, flag
 }
+
+func UpdateCategory(id string, catename string) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id)}
+	data := bson.M{"$set": bson.M{"catename": catename}}
+	flag := Update("category", selector, data)
+	return flag
+}
+
+func DeleteCategory(id string) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id)}
+	data := bson.M{"$set": bson.M{"isdelete": true}}
+	flag := Update("category", selector, data)
+	return flag
+}

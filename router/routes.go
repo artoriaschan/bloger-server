@@ -96,6 +96,18 @@ var routes = Routes{
 		Pattern:     "/api/cates",
 		HandlerFunc: controller.QueryCategories,
 	},
+	Route{
+		Name:        "ModifyCategory",
+		Method:      []string{"Post"},
+		Pattern:     "/api/cates/update",
+		HandlerFunc: controller.ModifyCategory,
+	},
+	Route{
+		Name:        "DeleteCategory",
+		Method:      []string{"Get"},
+		Pattern:     "/api/cate/delete/{cateId}",
+		HandlerFunc: controller.DeleteCategory,
+	},
 	// 标签相关
 	Route{
 		Name:        "AddTag",

@@ -10,10 +10,16 @@ import (
 	"time"
 
 	"github.com/artoriaschan/bloger-server/model"
+	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2/bson"
 )
 
 type ReceiveCategory struct {
+	Catename string `json:"catename"`
+}
+
+type ReceiveModifyCategory struct {
+	Id       string `json:"id"`
 	Catename string `json:"catename"`
 }
 
@@ -140,7 +146,120 @@ func AddCategory(writer http.ResponseWriter, request *http.Request) {
 	}
 	responseResult := ResponseResult{
 		Code:    OK,
-		Message: "添加成功",
+		Message: "添加" + rc.Catename + "成功",
+		Data: ResponseList{
+			List: *cates,
+			Pagination: Pagination{
+				Total:       num,
+				PageSize:    pageSize,
+				CurrentPage: currentPage,
+			},
+		},
+	}
+	result := responseResult.ToJson()
+	writer.Write(result)
+	return
+}
+
+// /api/cates/update
+func ModifyCategory(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	body, _ := ioutil.ReadAll(request.Body)
+	ConsoleLogger.Println(string(body))
+
+	rmc := &ReceiveModifyCategory{}
+	err := json.Unmarshal(body, &rmc)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			ConsoleLogger.Println(err)
+			responseResult := ResponseResult{
+				Code:    BadServer,
+				Message: "服务异常,请稍后再试",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+			return
+		}
+	}()
+	sess := globalSessions.SessionStart(writer, request)
+	if sess.Get("loginAdmin") != nil {
+		// TODO
+	} else {
+		panic(fmt.Errorf("未登录"))
+	}
+	ok := model.UpdateCategory(rmc.Id, rmc.Catename)
+	if !ok {
+		panic(fmt.Errorf("更新失败"))
+	}
+	cates, num, currentPage, pageSize, err := GetCategories(bson.M{}, writer, request)
+	if err != nil {
+		panic(err)
+	}
+	responseResult := ResponseResult{
+		Code:    OK,
+		Message: "更新" + rmc.Catename + "成功",
+		Data: ResponseList{
+			List: *cates,
+			Pagination: Pagination{
+				Total:       num,
+				PageSize:    pageSize,
+				CurrentPage: currentPage,
+			},
+		},
+	}
+	result := responseResult.ToJson()
+	writer.Write(result)
+	return
+}
+
+// /api/cate/delete/{cateId}
+func DeleteCategory(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	defer func() {
+		if err := recover(); err != nil {
+			ConsoleLogger.Println(err)
+			responseResult := ResponseResult{
+				Code:    BadServer,
+				Message: "服务异常,请稍后再试",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+			return
+		}
+	}()
+	vars := mux.Vars(request)
+	cateId := vars["cateId"]
+	if cateId == "" {
+		writer.WriteHeader(http.StatusNotFound)
+		responseResult := ResponseResult{
+			Code:    BadServer,
+			Message: "未知路径",
+			Data:    nil,
+		}
+		result := responseResult.ToJson()
+		writer.Write(result)
+	}
+	// 从session中获取登录认证信息
+	sess := globalSessions.SessionStart(writer, request)
+	isAdmin := sess.Get("isAdmin").(bool) //通过断言实现类型转换
+	if isAdmin {
+		ok := model.DeleteCategory(cateId)
+		if !ok {
+			panic(fmt.Errorf("更新失败"))
+		}
+	}
+	cates, num, currentPage, pageSize, err := GetCategories(bson.M{}, writer, request)
+	if err != nil {
+		panic(err)
+	}
+	responseResult := ResponseResult{
+		Code:    OK,
+		Message: "删除成功",
 		Data: ResponseList{
 			List: *cates,
 			Pagination: Pagination{
