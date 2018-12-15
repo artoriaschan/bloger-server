@@ -53,3 +53,17 @@ func GetTags(filter bson.M, skip, limit int) (*[]OutputTag, int, bool) {
 	countNum, flag := FindAll("tag", filter, field, cateList, skip, limit)
 	return cateList, countNum, flag
 }
+
+func UpdateTag(id string, tagname string, color string) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id)}
+	data := bson.M{"$set": bson.M{"tagname": tagname, "color": color}}
+	flag := Update("tag", selector, data)
+	return flag
+}
+
+func DeleteTag(id string) bool {
+	selector := bson.M{"_id": bson.ObjectIdHex(id)}
+	data := bson.M{"$set": bson.M{"isdelete": true}}
+	flag := Update("tag", selector, data)
+	return flag
+}

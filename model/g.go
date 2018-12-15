@@ -3,12 +3,14 @@ package model
 import (
 	"log"
 
+	"github.com/artoriaschan/bloger-server/utils/logging"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 var GlobalMgoSession *mgo.Session
 var dbName string = "bloger"
+var ConsoleLogger = logging.GetConsoleLogger()
 
 func init() {
 	db := ConnectToDB()
@@ -46,7 +48,7 @@ func Insert(collectionName string, documents interface{}) bool {
 	err := collection.Insert(documents)
 
 	if err != nil {
-		log.Println(err.Error())
+		ConsoleLogger.Println(err.Error())
 		return false
 	}
 	return true
@@ -61,7 +63,7 @@ func Find(collectionName string, filter bson.M, result interface{}) bool {
 
 	err := collection.Find(filter).One(result)
 	if err != nil {
-		log.Println(err.Error())
+		ConsoleLogger.Println(err.Error())
 		return false
 	}
 	return true
@@ -76,7 +78,7 @@ func FindId(collectionName string, M interface{}, result interface{}) bool {
 
 	err := collection.FindId(M).One(result)
 	if err != nil {
-		log.Println(err.Error())
+		ConsoleLogger.Println(err.Error())
 		return false
 	}
 	return true
@@ -90,12 +92,12 @@ func FindAll(collectionName string, filter bson.M, fields bson.M, users interfac
 	collection := session.DB(dbName).C(collectionName)
 	countNum, err := collection.Count()
 	if err != nil {
-		log.Println(err.Error())
+		ConsoleLogger.Println(err.Error())
 		return 0, false
 	}
 	err = collection.Find(filter).Select(fields).Skip(skip).Limit(limit).All(users)
 	if err != nil {
-		log.Println(err.Error())
+		ConsoleLogger.Println(err.Error())
 		return 0, false
 	}
 	return countNum, true
@@ -110,7 +112,7 @@ func Update(collectionName string, selector, data bson.M) bool {
 
 	err := collection.Update(selector, data)
 	if err != nil {
-		log.Println(err.Error())
+		ConsoleLogger.Println(err.Error())
 		return false
 	}
 	return true
@@ -120,6 +122,5 @@ func Update(collectionName string, selector, data bson.M) bool {
 func Remove(collectionName string) {
 	session := GlobalMgoSession.Clone()
 	defer session.Close()
-
 	//collection := session.DB(dbName).C(collectionName)
 }

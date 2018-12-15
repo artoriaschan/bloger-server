@@ -83,6 +83,12 @@ var routes = Routes{
 		Pattern:     "/api/article/post",
 		HandlerFunc: controller.AddArticle,
 	},
+	Route{
+		Name:        "QueryArticleDetail",
+		Method:      []string{"Get"},
+		Pattern:     "/api/article/{articleId}",
+		HandlerFunc: controller.QueryArticleDetail,
+	},
 	// 分类相关
 	Route{
 		Name:        "AddCategory",
@@ -120,5 +126,17 @@ var routes = Routes{
 		Method:      []string{"Get"},
 		Pattern:     "/api/tags",
 		HandlerFunc: controller.QueryTags,
+	},
+	Route{
+		Name:        "ModifyTag",
+		Method:      []string{"Post"},
+		Pattern:     "/api/tag/update",
+		HandlerFunc: controller.ModifyTag,
+	},
+	Route{
+		Name:        "DeleteTag",
+		Method:      []string{"Get"},
+		Pattern:     "/api/tag/delete/{tagId}",
+		HandlerFunc: controller.DeleteTag,
 	},
 }

@@ -10,10 +10,17 @@ import (
 	"time"
 
 	"github.com/artoriaschan/bloger-server/model"
+	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2/bson"
 )
 
 type ReceiveTag struct {
+	Tagname string `json:"tagname"`
+	Color   string `json:"color"`
+}
+
+type ReceiveModifyTag struct {
+	Id      string `json:"id"`
 	Tagname string `json:"tagname"`
 	Color   string `json:"color"`
 }
@@ -143,6 +150,119 @@ func AddTag(writer http.ResponseWriter, request *http.Request) {
 	responseResult := ResponseResult{
 		Code:    OK,
 		Message: "添加成功",
+		Data: ResponseList{
+			List: *tags,
+			Pagination: Pagination{
+				Total:       num,
+				PageSize:    pageSize,
+				CurrentPage: currentPage,
+			},
+		},
+	}
+	result := responseResult.ToJson()
+	writer.Write(result)
+	return
+}
+
+// /api/tag/update
+func ModifyTag(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	body, _ := ioutil.ReadAll(request.Body)
+	ConsoleLogger.Println(string(body))
+
+	rmt := &ReceiveModifyTag{}
+	err := json.Unmarshal(body, &rmt)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err := recover(); err != nil {
+			ConsoleLogger.Println(err)
+			responseResult := ResponseResult{
+				Code:    BadServer,
+				Message: "服务异常,请稍后再试",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+			return
+		}
+	}()
+	sess := globalSessions.SessionStart(writer, request)
+	if sess.Get("loginAdmin") != nil {
+		// TODO
+	} else {
+		panic(fmt.Errorf("未登录"))
+	}
+	ok := model.UpdateTag(rmt.Id, rmt.Tagname, rmt.Color)
+	if !ok {
+		panic(fmt.Errorf("更新失败"))
+	}
+	tags, num, currentPage, pageSize, err := GetTags(bson.M{}, writer, request)
+	if err != nil {
+		panic(err)
+	}
+	responseResult := ResponseResult{
+		Code:    OK,
+		Message: "更新" + rmt.Tagname + "成功",
+		Data: ResponseList{
+			List: *tags,
+			Pagination: Pagination{
+				Total:       num,
+				PageSize:    pageSize,
+				CurrentPage: currentPage,
+			},
+		},
+	}
+	result := responseResult.ToJson()
+	writer.Write(result)
+	return
+}
+
+// /api/tag/delete/{tagId}
+func DeleteTag(writer http.ResponseWriter, request *http.Request) {
+	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+	defer func() {
+		if err := recover(); err != nil {
+			ConsoleLogger.Println(err)
+			responseResult := ResponseResult{
+				Code:    BadServer,
+				Message: "服务异常,请稍后再试",
+				Data:    nil,
+			}
+			result := responseResult.ToJson()
+			writer.Write(result)
+			return
+		}
+	}()
+	vars := mux.Vars(request)
+	tagId := vars["tagId"]
+	if tagId == "" {
+		writer.WriteHeader(http.StatusNotFound)
+		responseResult := ResponseResult{
+			Code:    BadServer,
+			Message: "未知路径",
+			Data:    nil,
+		}
+		result := responseResult.ToJson()
+		writer.Write(result)
+	}
+	// 从session中获取登录认证信息
+	sess := globalSessions.SessionStart(writer, request)
+	isAdmin := sess.Get("isAdmin").(bool) //通过断言实现类型转换
+	if isAdmin {
+		ok := model.DeleteTag(tagId)
+		if !ok {
+			panic(fmt.Errorf("更新失败"))
+		}
+	}
+	tags, num, currentPage, pageSize, err := GetTags(bson.M{}, writer, request)
+	if err != nil {
+		panic(err)
+	}
+	responseResult := ResponseResult{
+		Code:    OK,
+		Message: "删除成功",
 		Data: ResponseList{
 			List: *tags,
 			Pagination: Pagination{
